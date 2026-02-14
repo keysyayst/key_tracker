@@ -16,10 +16,10 @@ class RootController extends GetxController {
         onAddIncome: () => Get.snackbar('Income', 'Buka form income (next step)'),
         onAddExpense: () => Get.snackbar('Expense', 'Buka form expense (next step)'),
         onStartFocus: () => Get.snackbar('Focus', 'Mulai focus timer (next step)'),
-        onAddBook: () => Get.snackbar('Book', 'Buka form tambah buku (next step)'),
+        onAddCook: () => Get.snackbar('Cook', 'Buka form tambah resep masakan (next step)'),
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-    ); // Get.bottomSheet adalah cara GetX untuk bottom sheet [web:186]
+    );
   }
 }

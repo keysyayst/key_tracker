@@ -8,7 +8,7 @@ class FabActionSheet extends StatelessWidget {
   final VoidCallback onAddIncome;
   final VoidCallback onAddExpense;
   final VoidCallback onStartFocus;
-  final VoidCallback onAddBook;
+  final VoidCallback onAddCook;
 
   const FabActionSheet({
     super.key,
@@ -17,7 +17,7 @@ class FabActionSheet extends StatelessWidget {
     required this.onAddIncome,
     required this.onAddExpense,
     required this.onStartFocus,
-    required this.onAddBook,
+    required this.onAddCook,
   });
 
   @override
@@ -121,13 +121,13 @@ class FabActionSheet extends StatelessWidget {
                     },
                   ),
                   _ActionTile(
-                    icon: Icons.menu_book_rounded,
-                    title: 'Book',
-                    bg: const Color(0xFFDBEAFE),
-                    fg: AppColors.blue400,
+                    icon: Icons.restaurant_menu_rounded,
+                    title: 'Cook',
+                    bg: const Color(0xFFFEF3C7),
+                    fg: const Color(0xFFF59E0B),
                     onTap: () {
                       Get.back();
-                      onAddBook();
+                      onAddCook();
                     },
                   ),
                 ],
