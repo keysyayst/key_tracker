@@ -7,7 +7,10 @@ class FabActionSheet extends StatelessWidget {
   final VoidCallback onAddJournal;
   final VoidCallback onWallet;
   final VoidCallback onHealth;
-  final VoidCallback onStartFocus;
+
+  // DIUBAH: dari onStartFocus -> onAddTask
+  final VoidCallback onAddTask;
+
   final VoidCallback onAddCook;
 
   const FabActionSheet({
@@ -16,7 +19,7 @@ class FabActionSheet extends StatelessWidget {
     required this.onAddJournal,
     required this.onWallet,
     required this.onHealth,
-    required this.onStartFocus,
+    required this.onAddTask,
     required this.onAddCook,
   });
 
@@ -34,7 +37,7 @@ class FabActionSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle (Garis kecil di atas sheet)
+              // Handle
               Container(
                 width: 44,
                 height: 5,
@@ -43,30 +46,19 @@ class FabActionSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
 
-              // Header Row
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Tambah cepat',
-                      style: TextStyle(
-                        fontSize: 18, 
-                        fontWeight: FontWeight.w900, 
-                        color: AppColors.textDark
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: Get.back,
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
+              // DIUBAH: header "Tambah cepat" dihapus, sisakan tombol close saja
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  onPressed: Get.back,
+                  icon: const Icon(Icons.close_rounded),
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              // Grid Actions (Menu Utama)
+              // Grid Actions
               GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
@@ -86,6 +78,7 @@ class FabActionSheet extends StatelessWidget {
                       onAddHabit();
                     },
                   ),
+
                   // 2. Journal
                   _ActionTile(
                     icon: Icons.edit_note_rounded,
@@ -97,45 +90,49 @@ class FabActionSheet extends StatelessWidget {
                       onAddJournal();
                     },
                   ),
-                  // 3. Focus
+
+                  // 3. Task (DIUBAH dari Focus)
                   _ActionTile(
-                    icon: Icons.timer_rounded,
-                    title: 'Focus',
-                    bg: const Color(0xFFFFEDD5),
-                    fg: AppColors.orange400,
+                    icon: Icons.task_alt_rounded,
+                    title: 'Task',
+                    bg: AppColors.blue50,
+                    fg: AppColors.blue400,
                     onTap: () {
                       Get.back();
-                      onStartFocus();
+                      onAddTask();
                     },
                   ),
-                  // 4. Wallet (Updated)
+
+                  // 4. Wallet
                   _ActionTile(
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Wallet',
-                    bg: const Color(0xFFD1FAE5), // Hijau Muda
-                    fg: AppColors.emerald500,     // Hijau Utama
+                    bg: const Color(0xFFD1FAE5),
+                    fg: AppColors.emerald500,
                     onTap: () {
                       Get.back();
                       onWallet();
                     },
                   ),
-                  // 5. Health (Updated Icon & Color)
+
+                  // 5. Health
                   _ActionTile(
-                    icon: Icons.fitness_center_rounded, // Ikon Angkat Beban
+                    icon: Icons.fitness_center_rounded,
                     title: 'Health',
-                    bg: const Color(0xFFFEE2E2), // Merah Muda
-                    fg: const Color(0xFFEF4444), // Merah Utama
+                    bg: const Color(0xFFFEE2E2),
+                    fg: const Color(0xFFEF4444),
                     onTap: () {
                       Get.back();
                       onHealth();
                     },
                   ),
-                  // 6. Cook (Updated from Book)
+
+                  // 6. Cook
                   _ActionTile(
-                    icon: Icons.restaurant_menu_rounded, // Ikon Makanan
+                    icon: Icons.restaurant_menu_rounded,
                     title: 'Cook',
-                    bg: const Color(0xFFFEF3C7), // Kuning Muda (Amber 100)
-                    fg: const Color(0xFFF59E0B), // Kuning Utama (Amber 500)
+                    bg: const Color(0xFFFEF3C7),
+                    fg: const Color(0xFFF59E0B),
                     onTap: () {
                       Get.back();
                       onAddCook();
@@ -144,26 +141,7 @@ class FabActionSheet extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 12),
-
-              // Note Kecil di Bawah
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFF3F4F6)),
-                ),
-                child: const Text(
-                  'Tip: Semua aktivitas di atas akan tersimpan otomatis.',
-                  style: TextStyle(
-                    fontSize: 12, 
-                    fontWeight: FontWeight.w700, 
-                    color: AppColors.textMuted
-                  ),
-                ),
-              ),
+              // DIUBAH: tip container dihapus
             ],
           ),
         ),
@@ -172,7 +150,6 @@ class FabActionSheet extends StatelessWidget {
   }
 }
 
-// Private Widget untuk Tile Menu
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -209,19 +186,19 @@ class _ActionTile extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: Colors.white, 
-                  borderRadius: BorderRadius.circular(18)
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Icon(icon, color: fg),
               ),
               const SizedBox(height: 10),
               Text(
-                title, 
+                title,
                 style: const TextStyle(
-                  fontSize: 12, 
-                  fontWeight: FontWeight.w900, 
-                  color: AppColors.textDark
-                )
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textDark,
+                ),
               ),
             ],
           ),
