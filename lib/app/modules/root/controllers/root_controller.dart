@@ -13,10 +13,10 @@ class RootController extends GetxController {
       FabActionSheet(
         onAddHabit: () => Get.snackbar('Habit', 'Buka form tambah habit (next step)'),
         onAddJournal: () => Get.snackbar('Journal', 'Buka form journal (next step)'),
-        onAddIncome: () => Get.snackbar('Income', 'Buka form income (next step)'),
-        onAddExpense: () => Get.snackbar('Expense', 'Buka form expense (next step)'),
+        onWallet: () => Get.snackbar('Wallet', 'Buka manajemen keuangan (next step)'), // Income & Expense digabung
+        onHealth: () => Get.snackbar('Health', 'Buka tracker kesehatan (next step)'), // Menu baru
         onStartFocus: () => Get.snackbar('Focus', 'Mulai focus timer (next step)'),
-        onAddCook: () => Get.snackbar('Cook', 'Buka form tambah resep masakan (next step)'),
+        onAddCook: () => Get.snackbar('Cook', 'Buka form resep masakan (next step)'),
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

@@ -5,8 +5,8 @@ import '../themes/app_colors.dart';
 class FabActionSheet extends StatelessWidget {
   final VoidCallback onAddHabit;
   final VoidCallback onAddJournal;
-  final VoidCallback onAddIncome;
-  final VoidCallback onAddExpense;
+  final VoidCallback onWallet;
+  final VoidCallback onHealth;
   final VoidCallback onStartFocus;
   final VoidCallback onAddCook;
 
@@ -14,8 +14,8 @@ class FabActionSheet extends StatelessWidget {
     super.key,
     required this.onAddHabit,
     required this.onAddJournal,
-    required this.onAddIncome,
-    required this.onAddExpense,
+    required this.onWallet,
+    required this.onHealth,
     required this.onStartFocus,
     required this.onAddCook,
   });
@@ -70,6 +70,7 @@ class FabActionSheet extends StatelessWidget {
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.05,
                 children: [
+                  // 1. Habit
                   _ActionTile(
                     icon: Icons.checklist_rounded,
                     title: 'Habit',
@@ -80,6 +81,7 @@ class FabActionSheet extends StatelessWidget {
                       onAddHabit();
                     },
                   ),
+                  // 2. Journal
                   _ActionTile(
                     icon: Icons.edit_note_rounded,
                     title: 'Journal',
@@ -90,6 +92,7 @@ class FabActionSheet extends StatelessWidget {
                       onAddJournal();
                     },
                   ),
+                  // 3. Focus
                   _ActionTile(
                     icon: Icons.timer_rounded,
                     title: 'Focus',
@@ -100,26 +103,29 @@ class FabActionSheet extends StatelessWidget {
                       onStartFocus();
                     },
                   ),
+                  // 4. Wallet
                   _ActionTile(
-                    icon: Icons.add_card_rounded,
-                    title: 'Income',
+                    icon: Icons.account_balance_wallet_rounded,
+                    title: 'Wallet',
                     bg: const Color(0xFFD1FAE5),
                     fg: AppColors.emerald500,
                     onTap: () {
                       Get.back();
-                      onAddIncome();
+                      onWallet();
                     },
                   ),
+                  // 5. Health (UPDATED ICON)
                   _ActionTile(
-                    icon: Icons.remove_circle_outline_rounded,
-                    title: 'Expense',
-                    bg: const Color(0xFFDCFCE7),
-                    fg: AppColors.emerald500,
+                    icon: Icons.fitness_center_rounded, // Ikon barbel/angkat beban
+                    title: 'Health',
+                    bg: const Color(0xFFFEE2E2),
+                    fg: const Color(0xFFEF4444),
                     onTap: () {
                       Get.back();
-                      onAddExpense();
+                      onHealth();
                     },
                   ),
+                  // 6. Cook
                   _ActionTile(
                     icon: Icons.restaurant_menu_rounded,
                     title: 'Cook',
@@ -145,7 +151,7 @@ class FabActionSheet extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFF3F4F6)),
                 ),
                 child: const Text(
-                  'Tip: nanti action di atas bisa langsung simpan ke Supabase.',
+                  'Tip: Semua aktivitas di atas akan tersimpan otomatis.',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted),
                 ),
               ),
