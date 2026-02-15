@@ -4,6 +4,8 @@ import '../modules/analytics/bindings/analytics_binding.dart';
 import '../modules/analytics/views/analytics_view.dart';
 import '../modules/books/bindings/books_binding.dart';
 import '../modules/books/views/books_view.dart';
+import '../modules/cook/bindings/cook_binding.dart';
+import '../modules/cook/views/cook_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
@@ -49,9 +51,14 @@ class AppPages {
       binding: WalletBinding(),
     ),
     GetPage(
-  name: Routes.dashboard,
-  page: () => const DashboardView(),
-  binding: DashboardBinding(),
-),
+      name: Routes.dashboard,
+      page: () => const DashboardView(),
+      binding: DashboardBinding(),
+    ),
+    GetPage(
+      name: Routes.COOK,
+      page: () => const CookView(),
+      binding: CookBinding(),
+    ),
   ];
 }

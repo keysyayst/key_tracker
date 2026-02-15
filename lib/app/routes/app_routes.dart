@@ -5,4 +5,5 @@ abstract class Routes {
   static const books = '/books';
   static const profile = '/profile';
   static const WALLET = '/wallet';
+  static const COOK = '/cook';
 }
