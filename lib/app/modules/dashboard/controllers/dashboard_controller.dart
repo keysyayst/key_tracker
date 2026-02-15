@@ -3,9 +3,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 // Import ProfileController
-import '../../profile/controllers/profile_controller.dart'; 
+import '../../profile/controllers/profile_controller.dart';
 // Import Widget Mascot untuk akses Enum CatMood
 import '../../../widgets/cute_cat_mascot.dart';
+
+// Ambil WalletController yang sudah ada
+import '../../wallet/controllers/wallet_controller.dart';
 
 // Model sederhana untuk Task
 class Task {
@@ -41,6 +44,9 @@ class DashboardController extends GetxController {
   // === INTEGRASI PROFILE ===
   final profileC = Get.find<ProfileController>();
 
+  // === INTEGRASI WALLET (REAL TIME) ===
+  final walletC = Get.find<WalletController>();
+
   // === STATE UMUM ===
   final today = DateTime.now().obs;
   final selectedDate = DateTime.now().obs;
@@ -51,17 +57,19 @@ class DashboardController extends GetxController {
   var currentMood = CatMood.happy.obs; // Default Happy
   var moodMessage = "Semangat hari ini ya! ✨".obs;
 
-  // === DATA DUMMY (Tasks & Wallet) ===
+  // === DATA DUMMY (Tasks) ===
   final tasks = <Task>[
     Task(id: '1', title: 'Minum Air 2L', category: 'Health', completed: false, icon: Icons.local_drink_rounded, date: DateTime.now()),
     Task(id: '2', title: 'Belajar GetX', category: 'Skill', completed: true, icon: Icons.code_rounded, date: DateTime.now()),
     Task(id: '3', title: 'Beresin Kamar', category: 'Home', completed: false, icon: Icons.cleaning_services_rounded, date: DateTime.now()),
   ].obs;
 
-  final weeklyBudgetRemaining = 250000.obs;
-  final monthlyBudgetRemaining = 1200000.obs;
-  final totalSaldo = 4500000.obs;
-  final tabungan = 10000000.obs;
+  // === WALLET DI DASHBOARD (DI-SYNC DARI WalletController) ===
+  // Tetap pakai .obs seperti punyamu agar UI tidak perlu diubah.
+  final weeklyBudgetRemaining = 0.obs;
+  final monthlyBudgetRemaining = 1200000.obs; // tidak ada sumbernya di WalletController-mu, jadi biarkan
+  final totalSaldo = 0.obs;
+  final tabungan = 0.obs;
 
   // === FITUR JOURNAL ===
   var journalEntries = <DateTime, String>{}.obs;
@@ -70,6 +78,14 @@ class DashboardController extends GetxController {
   void onInit() {
     super.onInit();
     sectionPageController = PageController(initialPage: sectionIndex.value);
+
+    // Sinkron awal + real time saat data wallet berubah
+    _syncWalletNumbers();
+
+    ever(walletC.wallets, (_) => _syncWalletNumbers());
+    ever(walletC.weeklyBudgetLimit, (_) => _syncWalletNumbers());
+    ever(walletC.weeklySpent, (_) => _syncWalletNumbers());
+    ever(walletC.savingTargets, (_) => _syncWalletNumbers());
   }
 
   @override
@@ -78,10 +94,26 @@ class DashboardController extends GetxController {
     super.onClose();
   }
 
+  void _syncWalletNumbers() {
+    // totalSaldo = total balance semua wallet
+    totalSaldo.value = walletC.totalBalance.toInt();
+
+    // tabungan = total current_amount dari saving targets
+    final savingSum = walletC.savingTargets.fold<double>(
+      0.0,
+      (sum, t) => sum + t.currentAmount,
+    );
+    tabungan.value = savingSum.toInt();
+
+    // weeklyBudgetRemaining = weeklyLimit - weeklySpent (min 0)
+    final remaining = walletC.weeklyBudgetLimit.value - walletC.weeklySpent.value;
+    weeklyBudgetRemaining.value = remaining > 0 ? remaining.toInt() : 0;
+  }
+
   // === LOGIKA MOOD (BARU) ===
   void setMood(CatMood mood) {
     currentMood.value = mood;
-    
+
     // Ganti Pesan Motivasi sesuai Mood
     switch (mood) {
       case CatMood.sad:

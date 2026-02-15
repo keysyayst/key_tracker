@@ -48,5 +48,10 @@ class AppPages {
       page: () => const WalletView(),
       binding: WalletBinding(),
     ),
+    GetPage(
+  name: Routes.dashboard,
+  page: () => const DashboardView(),
+  binding: DashboardBinding(),
+),
   ];
 }

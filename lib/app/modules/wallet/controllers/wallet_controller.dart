@@ -24,7 +24,7 @@ class WalletModel {
       id: json['id'],
       name: json['name'],
       balance: (json['balance'] as num).toDouble(),
-      iconCode: json['icon_code'] ?? 58946, 
+      iconCode: json['icon_code'] ?? 58946,
       colorValue: json['color_value'] ?? 0xFFFB7185, // Default Pink
     );
   }
@@ -90,7 +90,6 @@ class PieChartData {
 }
 
 // --- CONTROLLER ---
-
 class WalletController extends GetxController {
   final _supabase = Supabase.instance.client;
 
@@ -99,15 +98,34 @@ class WalletController extends GetxController {
   var savingTargets = <SavingTargetModel>[].obs;
   var weeklyBudgetLimit = 0.0.obs;
   var weeklySpent = 0.0.obs;
-  
+
   // State untuk Tab (0 = Wallet, 1 = Grafik)
   var currentTab = 0.obs;
-  
+
   // State Filter Grafik (0 = Mingguan, 1 = Bulanan)
   var chartFilter = 0.obs;
 
   var isLoading = true.obs;
   var isSubmitting = false.obs;
+
+  // ====== TAMBAHAN UNTUK SINKRON ROOT <-> DASHBOARD (REAL TIME) ======
+  // Wallet yang sedang dipilih/aktif (dipakai root & dashboard).
+  final RxnString activeWalletId = RxnString();
+
+  WalletModel? get activeWallet {
+    final id = activeWalletId.value;
+    if (id == null || id.isEmpty) return null;
+    try {
+      return wallets.firstWhere((w) => w.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void setActiveWallet(String walletId) {
+    activeWalletId.value = walletId;
+  }
+  // ==================================================================
 
   double get totalBalance => wallets.fold(0, (sum, item) => sum + item.balance);
 
@@ -126,8 +144,24 @@ class WalletController extends GetxController {
       if (userId == null) return;
 
       // Wallets
-      final walletData = await _supabase.from('wallets').select().eq('user_id', userId).order('created_at');
+      final walletData = await _supabase
+          .from('wallets')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at');
       wallets.value = (walletData as List).map((e) => WalletModel.fromJson(e)).toList();
+
+      // ====== TAMBAHAN: pastikan activeWalletId valid setelah wallets ke-load ======
+      if (wallets.isEmpty) {
+        activeWalletId.value = null;
+      } else {
+        final currentId = activeWalletId.value;
+        final stillExists = currentId != null && wallets.any((w) => w.id == currentId);
+        if (!stillExists) {
+          activeWalletId.value = wallets.first.id; // default: wallet pertama
+        }
+      }
+      // ===========================================================================
 
       // Transactions
       final transactionData = await _supabase
@@ -148,10 +182,14 @@ class WalletController extends GetxController {
       calculateWeeklySpent();
 
       // Savings
-      final savingData = await _supabase.from('saving_targets').select().eq('user_id', userId).order('created_at');
+      final savingData = await _supabase
+          .from('saving_targets')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at');
       savingTargets.value = (savingData as List).map((e) => SavingTargetModel.fromJson(e)).toList();
-
     } catch (e) {
+      // ignore: avoid_print
       print("Error fetching data: $e");
     } finally {
       isLoading.value = false;
@@ -165,7 +203,9 @@ class WalletController extends GetxController {
 
     double spent = 0;
     for (var trx in transactions) {
-      if (trx.isExpense && trx.date.isAfter(startOfWeek) && trx.date.isBefore(startOfNextWeek)) {
+      if (trx.isExpense &&
+          trx.date.isAfter(startOfWeek) &&
+          trx.date.isBefore(startOfNextWeek)) {
         spent += trx.amount;
       }
     }
@@ -173,7 +213,6 @@ class WalletController extends GetxController {
   }
 
   // --- ACTIONS ---
-
   Future<void> addWallet(String name, double balance) async {
     if (isSubmitting.value) return;
     isSubmitting.value = true;
@@ -186,9 +225,11 @@ class WalletController extends GetxController {
         'color_value': 0xFFFB7185, // Pink
       });
       await fetchData();
-      Get.snackbar("Berhasil", "Dompet ditambahkan", backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar("Berhasil", "Dompet ditambahkan",
+          backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal menambah wallet", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal menambah wallet",
+          backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isSubmitting.value = false;
     }
@@ -198,9 +239,11 @@ class WalletController extends GetxController {
     try {
       await _supabase.from('wallets').update({'name': newName}).eq('id', id);
       await fetchData();
-      Get.snackbar("Update", "Nama dompet diubah", backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar("Update", "Nama dompet diubah",
+          backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal update wallet", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal update wallet",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
@@ -208,10 +251,12 @@ class WalletController extends GetxController {
     try {
       await _supabase.from('wallets').delete().eq('id', id);
       wallets.removeWhere((w) => w.id == id);
-      await fetchData(); 
-      Get.snackbar("Dihapus", "Dompet dihapus", backgroundColor: Colors.orange, colorText: Colors.white);
+      await fetchData();
+      Get.snackbar("Dihapus", "Dompet dihapus",
+          backgroundColor: Colors.orange, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Gagal", "Error menghapus dompet", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Gagal", "Error menghapus dompet",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
@@ -228,7 +273,7 @@ class WalletController extends GetxController {
         'is_expense': isExpense,
         'date': DateTime.now().toIso8601String(),
       });
-      
+
       final walletIndex = wallets.indexWhere((w) => w.id == walletId);
       if (walletIndex != -1) {
         final oldWallet = wallets[walletIndex];
@@ -237,9 +282,11 @@ class WalletController extends GetxController {
       }
       if (isExpense) weeklySpent.value += amount;
       await fetchData();
-      Get.snackbar("Sukses", "Transaksi dicatat", backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar("Sukses", "Transaksi dicatat",
+          backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal catat transaksi", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal catat transaksi",
+          backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isSubmitting.value = false;
     }
@@ -250,7 +297,7 @@ class WalletController extends GetxController {
     isSubmitting.value = true;
     try {
       final userId = _supabase.auth.currentUser!.id;
-      
+
       final existing = await _supabase.from('budgets').select().eq('user_id', userId).maybeSingle();
       if (existing != null) {
         await _supabase.from('budgets').update({'weekly_limit': amount}).eq('user_id', userId);
@@ -272,16 +319,17 @@ class WalletController extends GetxController {
 
       weeklyBudgetLimit.value = amount;
       await fetchData();
-      Get.snackbar("Siap", "Budget dialokasikan", backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar("Siap", "Budget dialokasikan",
+          backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal set budget", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal set budget",
+          backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isSubmitting.value = false;
     }
   }
 
   // --- ACTIONS: SAVING TARGETS ---
-
   Future<void> addSavingTarget(String title, double target) async {
     try {
       await _supabase.from('saving_targets').insert({
@@ -291,9 +339,11 @@ class WalletController extends GetxController {
         'current_amount': 0,
       });
       await fetchData();
-      Get.snackbar("Semangat", "Impian baru dimulai!", backgroundColor: Colors.pink, colorText: Colors.white);
+      Get.snackbar("Semangat", "Impian baru dimulai!",
+          backgroundColor: Colors.pink, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal tambah impian", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal tambah impian",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
@@ -301,12 +351,14 @@ class WalletController extends GetxController {
     try {
       final target = savingTargets.firstWhere((t) => t.id == id);
       final newAmount = target.currentAmount + amountToAdd;
-      
+
       await _supabase.from('saving_targets').update({'current_amount': newAmount}).eq('id', id);
       await fetchData();
-      Get.snackbar("Yay!", "Tabungan bertambah Rp ${amountToAdd.toInt()}", backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar("Yay!", "Tabungan bertambah Rp ${amountToAdd.toInt()}",
+          backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal update tabungan", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal update tabungan",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
@@ -317,9 +369,11 @@ class WalletController extends GetxController {
         'target_amount': newTarget
       }).eq('id', id);
       await fetchData();
-      Get.snackbar("Update", "Info impian diubah", backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar("Update", "Info impian diubah",
+          backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal edit impian", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal edit impian",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
@@ -327,26 +381,25 @@ class WalletController extends GetxController {
     try {
       await _supabase.from('saving_targets').delete().eq('id', id);
       savingTargets.removeWhere((t) => t.id == id);
-      Get.snackbar("Dihapus", "Impian dihapus", backgroundColor: Colors.orange, colorText: Colors.white);
+      Get.snackbar("Dihapus", "Impian dihapus",
+          backgroundColor: Colors.orange, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal hapus impian", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Gagal hapus impian",
+          backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
   // --- PIE CHART DATA GENERATION ---
-  // Mengelompokkan transaksi berdasarkan Judul/Kategori untuk Pie Chart
   List<PieChartData> getPieData({required bool isExpense}) {
     Map<String, double> groupedData = {};
 
     final now = DateTime.now();
-    // Filter rentang waktu
-    final startDate = chartFilter.value == 0 
+    final startDate = chartFilter.value == 0
         ? now.subtract(const Duration(days: 7)) // Mingguan
         : DateTime(now.year, now.month - 1, now.day); // Bulanan (approx 30 days)
 
     for (var trx in transactions) {
       if (trx.isExpense == isExpense && trx.date.isAfter(startDate)) {
-        // Gunakan Title sebagai kategori. Jika ada sistem kategori, ganti trx.title dengan trx.category
         if (groupedData.containsKey(trx.title)) {
           groupedData[trx.title] = groupedData[trx.title]! + trx.amount;
         } else {
@@ -355,7 +408,6 @@ class WalletController extends GetxController {
       }
     }
 
-    // Convert Map ke List PieChartData dengan warna unik
     List<Color> colors = [
       const Color(0xFFFB7185), // Pink
       const Color(0xFFF472B6), // Light Pink
@@ -372,7 +424,6 @@ class WalletController extends GetxController {
       colorIndex++;
     });
 
-    // Sort biar yang gede di awal
     result.sort((a, b) => b.value.compareTo(a.value));
     return result;
   }
