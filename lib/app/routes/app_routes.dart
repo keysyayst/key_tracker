@@ -4,4 +4,5 @@ abstract class Routes {
   static const analytics = '/analytics';
   static const books = '/books';
   static const profile = '/profile';
+  static const WALLET = '/wallet';
 }

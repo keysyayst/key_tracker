@@ -34,7 +34,7 @@ class FabActionSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // handle
+              // Handle (Garis kecil di atas sheet)
               Container(
                 width: 44,
                 height: 5,
@@ -45,12 +45,17 @@ class FabActionSheet extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
+              // Header Row
               Row(
                 children: [
                   const Expanded(
                     child: Text(
                       'Tambah cepat',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                      style: TextStyle(
+                        fontSize: 18, 
+                        fontWeight: FontWeight.w900, 
+                        color: AppColors.textDark
+                      ),
                     ),
                   ),
                   IconButton(
@@ -61,7 +66,7 @@ class FabActionSheet extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              // grid actions
+              // Grid Actions (Menu Utama)
               GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
@@ -103,34 +108,34 @@ class FabActionSheet extends StatelessWidget {
                       onStartFocus();
                     },
                   ),
-                  // 4. Wallet
+                  // 4. Wallet (Updated)
                   _ActionTile(
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Wallet',
-                    bg: const Color(0xFFD1FAE5),
-                    fg: AppColors.emerald500,
+                    bg: const Color(0xFFD1FAE5), // Hijau Muda
+                    fg: AppColors.emerald500,     // Hijau Utama
                     onTap: () {
                       Get.back();
                       onWallet();
                     },
                   ),
-                  // 5. Health (UPDATED ICON)
+                  // 5. Health (Updated Icon & Color)
                   _ActionTile(
-                    icon: Icons.fitness_center_rounded, // Ikon barbel/angkat beban
+                    icon: Icons.fitness_center_rounded, // Ikon Angkat Beban
                     title: 'Health',
-                    bg: const Color(0xFFFEE2E2),
-                    fg: const Color(0xFFEF4444),
+                    bg: const Color(0xFFFEE2E2), // Merah Muda
+                    fg: const Color(0xFFEF4444), // Merah Utama
                     onTap: () {
                       Get.back();
                       onHealth();
                     },
                   ),
-                  // 6. Cook
+                  // 6. Cook (Updated from Book)
                   _ActionTile(
-                    icon: Icons.restaurant_menu_rounded,
+                    icon: Icons.restaurant_menu_rounded, // Ikon Makanan
                     title: 'Cook',
-                    bg: const Color(0xFFFEF3C7),
-                    fg: const Color(0xFFF59E0B),
+                    bg: const Color(0xFFFEF3C7), // Kuning Muda (Amber 100)
+                    fg: const Color(0xFFF59E0B), // Kuning Utama (Amber 500)
                     onTap: () {
                       Get.back();
                       onAddCook();
@@ -141,7 +146,7 @@ class FabActionSheet extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // note kecil
+              // Note Kecil di Bawah
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -152,7 +157,11 @@ class FabActionSheet extends StatelessWidget {
                 ),
                 child: const Text(
                   'Tip: Semua aktivitas di atas akan tersimpan otomatis.',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                  style: TextStyle(
+                    fontSize: 12, 
+                    fontWeight: FontWeight.w700, 
+                    color: AppColors.textMuted
+                  ),
                 ),
               ),
             ],
@@ -163,6 +172,7 @@ class FabActionSheet extends StatelessWidget {
   }
 }
 
+// Private Widget untuk Tile Menu
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -198,11 +208,21 @@ class _ActionTile extends StatelessWidget {
               Container(
                 width: 42,
                 height: 42,
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                decoration: BoxDecoration(
+                  color: Colors.white, 
+                  borderRadius: BorderRadius.circular(18)
+                ),
                 child: Icon(icon, color: fg),
               ),
               const SizedBox(height: 10),
-              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+              Text(
+                title, 
+                style: const TextStyle(
+                  fontSize: 12, 
+                  fontWeight: FontWeight.w900, 
+                  color: AppColors.textDark
+                )
+              ),
             ],
           ),
         ),
