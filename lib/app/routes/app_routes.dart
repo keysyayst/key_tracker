@@ -6,4 +6,5 @@ abstract class Routes {
   static const profile = '/profile';
   static const WALLET = '/wallet';
   static const COOK = '/cook';
+  static const TASKS = '/tasks';
 }

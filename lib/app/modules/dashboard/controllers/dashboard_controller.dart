@@ -42,10 +42,10 @@ class Task {
 
 class DashboardController extends GetxController {
   // === INTEGRASI PROFILE ===
-  final profileC = Get.find<ProfileController>();
+  late final ProfileController profileC;
 
   // === INTEGRASI WALLET (REAL TIME) ===
-  final walletC = Get.find<WalletController>();
+  late final WalletController walletC;
 
   // === STATE UMUM ===
   final today = DateTime.now().obs;
@@ -53,23 +53,47 @@ class DashboardController extends GetxController {
   final sectionIndex = 0.obs;
   late PageController sectionPageController;
 
-  // === FITUR MOOD (BARU) ===
-  var currentMood = CatMood.happy.obs; // Default Happy
+  // === FITUR MOOD ===
+  var currentMood = CatMood.happy.obs;
   var moodMessage = "Semangat hari ini ya! ✨".obs;
 
   // === DATA DUMMY (Tasks) ===
   final tasks = <Task>[
-    Task(id: '1', title: 'Minum Air 2L', category: 'Health', completed: false, icon: Icons.local_drink_rounded, date: DateTime.now()),
-    Task(id: '2', title: 'Belajar GetX', category: 'Skill', completed: true, icon: Icons.code_rounded, date: DateTime.now()),
-    Task(id: '3', title: 'Beresin Kamar', category: 'Home', completed: false, icon: Icons.cleaning_services_rounded, date: DateTime.now()),
+    Task(
+      id: '1',
+      title: 'Minum Air 2L',
+      category: 'Health',
+      completed: false,
+      icon: Icons.local_drink_rounded,
+      date: DateTime.now(),
+    ),
+    Task(
+      id: '2',
+      title: 'Belajar GetX',
+      category: 'Skill',
+      completed: true,
+      icon: Icons.code_rounded,
+      date: DateTime.now(),
+    ),
+    Task(
+      id: '3',
+      title: 'Beresin Kamar',
+      category: 'Home',
+      completed: false,
+      icon: Icons.cleaning_services_rounded,
+      date: DateTime.now(),
+    ),
   ].obs;
 
   // === WALLET DI DASHBOARD (DI-SYNC DARI WalletController) ===
-  // Tetap pakai .obs seperti punyamu agar UI tidak perlu diubah.
-  final weeklyBudgetRemaining = 0.obs;
-  final monthlyBudgetRemaining = 1200000.obs; // tidak ada sumbernya di WalletController-mu, jadi biarkan
+  // (yang kepakai untuk 3 urutan kamu)
   final totalSaldo = 0.obs;
-  final tabungan = 0.obs;
+  final weeklyBudgetRemaining = 0.obs; // SISA (bukan total)
+  final danaDarurat = 0.obs;
+
+  // yang lain (kalau masih dipakai di panel lain, biarkan aman)
+  final monthlyBudgetRemaining = 1200000.obs; // tidak ada sumber di WalletController
+  final tabungan = 0.obs; // kalau sudah tidak dipakai di view, boleh kamu hapus
 
   // === FITUR JOURNAL ===
   var journalEntries = <DateTime, String>{}.obs;
@@ -77,15 +101,26 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    profileC = Get.find<ProfileController>();
+
+    // Pastikan WalletController ada sebelum dipakai
+    if (!Get.isRegistered<WalletController>()) {
+      Get.put(WalletController(), permanent: true);
+    }
+    walletC = Get.find<WalletController>();
+
     sectionPageController = PageController(initialPage: sectionIndex.value);
 
-    // Sinkron awal + real time saat data wallet berubah
     _syncWalletNumbers();
 
     ever(walletC.wallets, (_) => _syncWalletNumbers());
     ever(walletC.weeklyBudgetLimit, (_) => _syncWalletNumbers());
     ever(walletC.weeklySpent, (_) => _syncWalletNumbers());
     ever(walletC.savingTargets, (_) => _syncWalletNumbers());
+
+    // Dana darurat realtime (kalau field ini ada di WalletController kamu)
+    ever(walletC.emergencyFundAmount, (_) => _syncWalletNumbers());
   }
 
   @override
@@ -95,26 +130,25 @@ class DashboardController extends GetxController {
   }
 
   void _syncWalletNumbers() {
-    // totalSaldo = total balance semua wallet
+    // 1) Total saldo = total balance semua wallet
     totalSaldo.value = walletC.totalBalance.toInt();
 
-    // tabungan = total current_amount dari saving targets
-    final savingSum = walletC.savingTargets.fold<double>(
-      0.0,
-      (sum, t) => sum + t.currentAmount,
-    );
-    tabungan.value = savingSum.toInt();
-
-    // weeklyBudgetRemaining = weeklyLimit - weeklySpent (min 0)
+    // 2) Sisa budget mingguan = weeklyLimit - weeklySpent (min 0)
     final remaining = walletC.weeklyBudgetLimit.value - walletC.weeklySpent.value;
     weeklyBudgetRemaining.value = remaining > 0 ? remaining.toInt() : 0;
+
+    // 3) Dana darurat
+    danaDarurat.value = walletC.emergencyFundAmount.value.toInt();
+
+    // Optional: wishlist/tabungan total (kalau masih dipakai)
+    final savingSum = walletC.savingTargets.fold<double>(0.0, (sum, t) => sum + t.currentAmount);
+    tabungan.value = savingSum.toInt();
   }
 
-  // === LOGIKA MOOD (BARU) ===
+  // === LOGIKA MOOD ===
   void setMood(CatMood mood) {
     currentMood.value = mood;
 
-    // Ganti Pesan Motivasi sesuai Mood
     switch (mood) {
       case CatMood.sad:
         moodMessage.value = "Gapapa sedih, tarik napas dulu ya 🍃";

@@ -601,11 +601,27 @@ class _WalletPanel extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.zero,
         children: [
-          tile(accent: CutePalette.sky, label: 'Sisa Mingguan', value: rupiah(controller.weeklyBudgetRemaining.value), icon: Icons.calendar_view_week_rounded),
-          tile(accent: CutePalette.lavender, label: 'Sisa Bulanan', value: rupiah(controller.monthlyBudgetRemaining.value), icon: Icons.calendar_month_rounded),
-          tile(accent: CutePalette.pink, label: 'Total Saldo', value: rupiah(controller.totalSaldo.value), icon: Icons.account_balance_rounded),
-          tile(accent: CutePalette.pink, label: 'Tabungan', value: rupiah(controller.tabungan.value), icon: Icons.savings_rounded),
-        ],
+  tile(
+    accent: CutePalette.pink,
+    label: 'Total Saldo',
+    value: rupiah(controller.totalSaldo.value),
+    icon: Icons.account_balance_rounded,
+  ),
+  tile(
+    accent: CutePalette.sky,
+    label: 'Sisa Budget Mingguan',
+    value: rupiah(controller.weeklyBudgetRemaining.value),
+    icon: Icons.calendar_view_week_rounded,
+  ),
+  tile(
+    accent: CutePalette.sky,
+    label: 'Dana Darurat',
+    value: rupiah(controller.danaDarurat.value),
+    icon: Icons.health_and_safety_rounded,
+  ),
+],
+
+
       );
     });
   }

@@ -12,6 +12,8 @@ import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/root/bindings/root_binding.dart';
 import '../modules/root/views/root_view.dart';
+import '../modules/tasks/bindings/tasks_binding.dart';
+import '../modules/tasks/views/tasks_view.dart';
 import '../modules/wallet/bindings/wallet_binding.dart';
 import '../modules/wallet/views/wallet_view.dart';
 import 'app_routes.dart';
@@ -59,6 +61,11 @@ class AppPages {
       name: Routes.COOK,
       page: () => const CookView(),
       binding: CookBinding(),
+    ),
+    GetPage(
+      name: Routes.TASKS,
+      page: () => const TasksView(),
+      binding: TasksBinding(),
     ),
   ];
 }

@@ -10,8 +10,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app/routes/app_pages.dart';
 import 'app/themes/app_theme.dart';
 
-// === TAMBAHAN 1: Import ProfileController ===
-// (Sesuaikan path folder jika berbeda)
 import 'app/modules/profile/controllers/profile_controller.dart'; 
 
 Future<void> main() async {
@@ -28,9 +26,6 @@ Future<void> main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
   );
 
-  // === TAMBAHAN 2: Inject ProfileController ===
-  // Kita taruh di sini agar controllernya aktif terus (permanent: true)
-  // dan bisa diakses oleh Dashboard kapan saja.
   Get.put(ProfileController(), permanent: true);
 
   runApp(const KeyTrackerApp());

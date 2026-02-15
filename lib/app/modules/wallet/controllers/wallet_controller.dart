@@ -99,6 +99,10 @@ class WalletController extends GetxController {
   var weeklyBudgetLimit = 0.0.obs;
   var weeklySpent = 0.0.obs;
 
+  // ====== Dana Darurat (TAMBAHAN) ======
+  final emergencyFundAmount = 0.0.obs;
+  // ====================================
+
   // State untuk Tab (0 = Wallet, 1 = Grafik)
   var currentTab = 0.obs;
 
@@ -109,7 +113,6 @@ class WalletController extends GetxController {
   var isSubmitting = false.obs;
 
   // ====== TAMBAHAN UNTUK SINKRON ROOT <-> DASHBOARD (REAL TIME) ======
-  // Wallet yang sedang dipilih/aktif (dipakai root & dashboard).
   final RxnString activeWalletId = RxnString();
 
   WalletModel? get activeWallet {
@@ -151,17 +154,16 @@ class WalletController extends GetxController {
           .order('created_at');
       wallets.value = (walletData as List).map((e) => WalletModel.fromJson(e)).toList();
 
-      // ====== TAMBAHAN: pastikan activeWalletId valid setelah wallets ke-load ======
+      // Pastikan activeWalletId valid setelah wallets ke-load
       if (wallets.isEmpty) {
         activeWalletId.value = null;
       } else {
         final currentId = activeWalletId.value;
         final stillExists = currentId != null && wallets.any((w) => w.id == currentId);
         if (!stillExists) {
-          activeWalletId.value = wallets.first.id; // default: wallet pertama
+          activeWalletId.value = wallets.first.id;
         }
       }
-      // ===========================================================================
 
       // Transactions
       final transactionData = await _supabase
@@ -172,7 +174,8 @@ class WalletController extends GetxController {
       transactions.value = (transactionData as List).map((e) => TransactionModel.fromJson(e)).toList();
 
       // Budget
-      final budgetData = await _supabase.from('budgets').select().eq('user_id', userId).maybeSingle();
+      final budgetData =
+          await _supabase.from('budgets').select().eq('user_id', userId).maybeSingle();
       if (budgetData != null) {
         weeklyBudgetLimit.value = (budgetData['weekly_limit'] as num).toDouble();
       } else {
@@ -181,13 +184,27 @@ class WalletController extends GetxController {
 
       calculateWeeklySpent();
 
-      // Savings
+      // Wishlist (Saving Targets)
       final savingData = await _supabase
           .from('saving_targets')
           .select()
           .eq('user_id', userId)
           .order('created_at');
-      savingTargets.value = (savingData as List).map((e) => SavingTargetModel.fromJson(e)).toList();
+      savingTargets.value =
+          (savingData as List).map((e) => SavingTargetModel.fromJson(e)).toList();
+
+      // Dana Darurat (tidak boleh bikin wallet rusak kalau tabel belum ada)
+      try {
+        final ef = await _supabase
+            .from('emergency_fund')
+            .select()
+            .eq('user_id', userId)
+            .maybeSingle();
+        emergencyFundAmount.value =
+            ef == null ? 0.0 : (ef['amount'] as num).toDouble();
+      } catch (_) {
+        emergencyFundAmount.value = 0.0;
+      }
     } catch (e) {
       // ignore: avoid_print
       print("Error fetching data: $e");
@@ -211,6 +228,72 @@ class WalletController extends GetxController {
     }
     weeklySpent.value = spent;
   }
+
+  // ====== ACTIONS: DANA DARURAT (TAMBAHAN) ======
+  Future<void> addEmergencyFund(double amount) async {
+    if (amount <= 0) {
+      Get.snackbar("Oops", "Nominal harus lebih dari 0",
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (isSubmitting.value) return;
+    isSubmitting.value = true;
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+      final newAmount = emergencyFundAmount.value + amount;
+
+      await _supabase.from('emergency_fund').upsert({
+        'user_id': userId,
+        'amount': newAmount,
+      });
+
+      // real-time dalam app (dashboard & wallet ikut update)
+      emergencyFundAmount.value = newAmount;
+
+      Get.snackbar("Siap", "Dana darurat bertambah",
+          backgroundColor: Colors.green, colorText: Colors.white);
+    } catch (e) {
+      Get.snackbar("Error", "Gagal menambah dana darurat",
+          backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+
+  Future<void> reduceEmergencyFund(double amount) async {
+    if (amount <= 0) {
+      Get.snackbar("Oops", "Nominal harus lebih dari 0",
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (amount > emergencyFundAmount.value) {
+      Get.snackbar("Oops", "Dana darurat tidak cukup",
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (isSubmitting.value) return;
+    isSubmitting.value = true;
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+      final newAmount = emergencyFundAmount.value - amount;
+
+      await _supabase.from('emergency_fund').upsert({
+        'user_id': userId,
+        'amount': newAmount,
+      });
+
+      emergencyFundAmount.value = newAmount;
+
+      Get.snackbar("Oke", "Dana darurat berkurang",
+          backgroundColor: Colors.orange, colorText: Colors.white);
+    } catch (e) {
+      Get.snackbar("Error", "Gagal mengurangi dana darurat",
+          backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+  // ==============================================
 
   // --- ACTIONS ---
   Future<void> addWallet(String name, double balance) async {
@@ -260,7 +343,8 @@ class WalletController extends GetxController {
     }
   }
 
-  Future<void> addTransaction(String title, double amount, bool isExpense, String walletId) async {
+  Future<void> addTransaction(
+      String title, double amount, bool isExpense, String walletId) async {
     if (isSubmitting.value) return;
     isSubmitting.value = true;
     try {
@@ -277,8 +361,12 @@ class WalletController extends GetxController {
       final walletIndex = wallets.indexWhere((w) => w.id == walletId);
       if (walletIndex != -1) {
         final oldWallet = wallets[walletIndex];
-        final newBalance = isExpense ? oldWallet.balance - amount : oldWallet.balance + amount;
-        await _supabase.from('wallets').update({'balance': newBalance}).eq('id', walletId);
+        final newBalance =
+            isExpense ? oldWallet.balance - amount : oldWallet.balance + amount;
+        await _supabase
+            .from('wallets')
+            .update({'balance': newBalance})
+            .eq('id', walletId);
       }
       if (isExpense) weeklySpent.value += amount;
       await fetchData();
@@ -298,11 +386,20 @@ class WalletController extends GetxController {
     try {
       final userId = _supabase.auth.currentUser!.id;
 
-      final existing = await _supabase.from('budgets').select().eq('user_id', userId).maybeSingle();
+      final existing = await _supabase
+          .from('budgets')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
       if (existing != null) {
-        await _supabase.from('budgets').update({'weekly_limit': amount}).eq('user_id', userId);
+        await _supabase
+            .from('budgets')
+            .update({'weekly_limit': amount})
+            .eq('user_id', userId);
       } else {
-        await _supabase.from('budgets').insert({'user_id': userId, 'weekly_limit': amount});
+        await _supabase
+            .from('budgets')
+            .insert({'user_id': userId, 'weekly_limit': amount});
       }
 
       await _supabase.from('transactions').insert({
@@ -315,7 +412,10 @@ class WalletController extends GetxController {
       });
 
       final wallet = wallets.firstWhere((w) => w.id == sourceWalletId);
-      await _supabase.from('wallets').update({'balance': wallet.balance - amount}).eq('id', sourceWalletId);
+      await _supabase
+          .from('wallets')
+          .update({'balance': wallet.balance - amount})
+          .eq('id', sourceWalletId);
 
       weeklyBudgetLimit.value = amount;
       await fetchData();
@@ -339,10 +439,10 @@ class WalletController extends GetxController {
         'current_amount': 0,
       });
       await fetchData();
-      Get.snackbar("Semangat", "Impian baru dimulai!",
+      Get.snackbar("Semangat", "Wishlist baru dimulai!",
           backgroundColor: Colors.pink, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal tambah impian",
+      Get.snackbar("Error", "Gagal tambah wishlist",
           backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
@@ -352,12 +452,15 @@ class WalletController extends GetxController {
       final target = savingTargets.firstWhere((t) => t.id == id);
       final newAmount = target.currentAmount + amountToAdd;
 
-      await _supabase.from('saving_targets').update({'current_amount': newAmount}).eq('id', id);
+      await _supabase
+          .from('saving_targets')
+          .update({'current_amount': newAmount})
+          .eq('id', id);
       await fetchData();
-      Get.snackbar("Yay!", "Tabungan bertambah Rp ${amountToAdd.toInt()}",
+      Get.snackbar("Yay!", "Wishlist bertambah Rp ${amountToAdd.toInt()}",
           backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal update tabungan",
+      Get.snackbar("Error", "Gagal update wishlist",
           backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
@@ -369,10 +472,10 @@ class WalletController extends GetxController {
         'target_amount': newTarget
       }).eq('id', id);
       await fetchData();
-      Get.snackbar("Update", "Info impian diubah",
+      Get.snackbar("Update", "Info wishlist diubah",
           backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal edit impian",
+      Get.snackbar("Error", "Gagal edit wishlist",
           backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
@@ -381,10 +484,10 @@ class WalletController extends GetxController {
     try {
       await _supabase.from('saving_targets').delete().eq('id', id);
       savingTargets.removeWhere((t) => t.id == id);
-      Get.snackbar("Dihapus", "Impian dihapus",
+      Get.snackbar("Dihapus", "Wishlist dihapus",
           backgroundColor: Colors.orange, colorText: Colors.white);
     } catch (e) {
-      Get.snackbar("Error", "Gagal hapus impian",
+      Get.snackbar("Error", "Gagal hapus wishlist",
           backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
@@ -395,8 +498,8 @@ class WalletController extends GetxController {
 
     final now = DateTime.now();
     final startDate = chartFilter.value == 0
-        ? now.subtract(const Duration(days: 7)) // Mingguan
-        : DateTime(now.year, now.month - 1, now.day); // Bulanan (approx 30 days)
+        ? now.subtract(const Duration(days: 7))
+        : DateTime(now.year, now.month - 1, now.day);
 
     for (var trx in transactions) {
       if (trx.isExpense == isExpense && trx.date.isAfter(startDate)) {
@@ -409,12 +512,12 @@ class WalletController extends GetxController {
     }
 
     List<Color> colors = [
-      const Color(0xFFFB7185), // Pink
-      const Color(0xFFF472B6), // Light Pink
-      const Color(0xFFFB923C), // Orange
-      const Color(0xFF34D399), // Emerald
-      const Color(0xFF60A5FA), // Blue
-      const Color(0xFFA78BFA), // Lavender
+      const Color(0xFFFB7185),
+      const Color(0xFFF472B6),
+      const Color(0xFFFB923C),
+      const Color(0xFF34D399),
+      const Color(0xFF60A5FA),
+      const Color(0xFFA78BFA),
     ];
 
     int colorIndex = 0;
