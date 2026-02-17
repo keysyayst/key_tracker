@@ -10,7 +10,9 @@ import '../../../widgets/cute_cat_mascot.dart';
 // Ambil WalletController yang sudah ada
 import '../../wallet/controllers/wallet_controller.dart';
 
-// Model sederhana untuk Task
+// Cook
+import '../../cook/controllers/cook_controller.dart';
+
 class Task {
   final String id;
   final String title;
@@ -46,6 +48,9 @@ class DashboardController extends GetxController {
 
   // === INTEGRASI WALLET (REAL TIME) ===
   late final WalletController walletC;
+
+  // === INTEGRASI COOK (REAL TIME) ===
+  late final CookController cookC;
 
   // === STATE UMUM ===
   final today = DateTime.now().obs;
@@ -86,17 +91,14 @@ class DashboardController extends GetxController {
   ].obs;
 
   // === WALLET DI DASHBOARD (DI-SYNC DARI WalletController) ===
-  // (yang kepakai untuk 3 urutan kamu)
   final totalSaldo = 0.obs;
-  final weeklyBudgetRemaining = 0.obs; // SISA (bukan total)
+  final weeklyBudgetRemaining = 0.obs;
   final danaDarurat = 0.obs;
 
-  // yang lain (kalau masih dipakai di panel lain, biarkan aman)
-  final monthlyBudgetRemaining = 1200000.obs; // tidak ada sumber di WalletController
-  final tabungan = 0.obs; // kalau sudah tidak dipakai di view, boleh kamu hapus
+  final monthlyBudgetRemaining = 1200000.obs;
+  final tabungan = 0.obs;
 
-  // === FITUR JOURNAL ===
-  var journalEntries = <DateTime, String>{}.obs;
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   @override
   void onInit() {
@@ -104,11 +106,17 @@ class DashboardController extends GetxController {
 
     profileC = Get.find<ProfileController>();
 
-    // Pastikan WalletController ada sebelum dipakai
+    // Wallet
     if (!Get.isRegistered<WalletController>()) {
       Get.put(WalletController(), permanent: true);
     }
     walletC = Get.find<WalletController>();
+
+    // Cook (pastikan 1 instance global)
+    if (!Get.isRegistered<CookController>()) {
+      Get.put(CookController(), permanent: true);
+    }
+    cookC = Get.find<CookController>();
 
     sectionPageController = PageController(initialPage: sectionIndex.value);
 
@@ -118,9 +126,14 @@ class DashboardController extends GetxController {
     ever(walletC.weeklyBudgetLimit, (_) => _syncWalletNumbers());
     ever(walletC.weeklySpent, (_) => _syncWalletNumbers());
     ever(walletC.savingTargets, (_) => _syncWalletNumbers());
-
-    // Dana darurat realtime (kalau field ini ada di WalletController kamu)
     ever(walletC.emergencyFundAmount, (_) => _syncWalletNumbers());
+
+    // Sinkron tanggal dashboard -> Cook
+    ever<DateTime>(selectedDate, (d) {
+      cookC.pickCustomDate(_dateOnly(d));
+    });
+
+    cookC.pickCustomDate(_dateOnly(selectedDate.value));
   }
 
   @override
@@ -130,22 +143,17 @@ class DashboardController extends GetxController {
   }
 
   void _syncWalletNumbers() {
-    // 1) Total saldo = total balance semua wallet
     totalSaldo.value = walletC.totalBalance.toInt();
 
-    // 2) Sisa budget mingguan = weeklyLimit - weeklySpent (min 0)
     final remaining = walletC.weeklyBudgetLimit.value - walletC.weeklySpent.value;
     weeklyBudgetRemaining.value = remaining > 0 ? remaining.toInt() : 0;
 
-    // 3) Dana darurat
     danaDarurat.value = walletC.emergencyFundAmount.value.toInt();
 
-    // Optional: wishlist/tabungan total (kalau masih dipakai)
     final savingSum = walletC.savingTargets.fold<double>(0.0, (sum, t) => sum + t.currentAmount);
     tabungan.value = savingSum.toInt();
   }
 
-  // === LOGIKA MOOD ===
   void setMood(CatMood mood) {
     currentMood.value = mood;
 
@@ -169,12 +177,10 @@ class DashboardController extends GetxController {
     }
   }
 
-  // === LOGIKA TANGGAL ===
   void pickDate(DateTime date) {
-    selectedDate.value = date;
+    selectedDate.value = _dateOnly(date);
   }
 
-  // === LOGIKA NAVIGASI SECTION ===
   void setSection(int index) {
     if (index == sectionIndex.value) return;
     sectionIndex.value = index;
@@ -189,7 +195,6 @@ class DashboardController extends GetxController {
     sectionIndex.value = index;
   }
 
-  // === LOGIKA TASKS ===
   List<Task> get tasksForSelectedDate {
     return tasks.where((t) {
       final d = t.date;
@@ -211,30 +216,5 @@ class DashboardController extends GetxController {
       tasks[index] = tasks[index].copyWith(completed: !tasks[index].completed);
       tasks.refresh();
     }
-  }
-
-  // === LOGIKA JOURNAL ===
-  String get currentJournalContent {
-    final dateKey = DateTime(
-      selectedDate.value.year,
-      selectedDate.value.month,
-      selectedDate.value.day,
-    );
-    return journalEntries[dateKey] ?? '';
-  }
-
-  void saveJournal(String content) {
-    final dateKey = DateTime(
-      selectedDate.value.year,
-      selectedDate.value.month,
-      selectedDate.value.day,
-    );
-
-    if (content.trim().isEmpty) {
-      journalEntries.remove(dateKey);
-    } else {
-      journalEntries[dateKey] = content;
-    }
-    journalEntries.refresh();
   }
 }
