@@ -20,6 +20,7 @@ dependencies:
   easy_date_timeline: ^2.0.9
   image_picker: ^1.2.1
   percent_indicator: ^4.2.3
+  lottie: ^3.1.0
 
 dev_dependencies:
   flutter_test:
@@ -31,3 +32,4 @@ flutter:
   assets:
     - .env
     - assets/  
+    - assets/lottie/

@@ -36,8 +36,10 @@ class RootController extends GetxController {
           Get.to(() => const WalletView());
         },
 
-        onHealth: () =>
-            Get.snackbar('Health', 'Buka tracker kesehatan (next step)'),
+        onHealth: () {
+          Get.back();
+          Get.toNamed(Routes.HEALTH);
+        },
 
         onAddTask: () {
           Get.back();

@@ -8,6 +8,8 @@ import '../modules/cook/bindings/cook_binding.dart';
 import '../modules/cook/views/cook_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
+import '../modules/health/bindings/health_binding.dart';
+import '../modules/health/views/health_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/root/bindings/root_binding.dart';
@@ -63,10 +65,14 @@ class AppPages {
       binding: CookBinding(),
     ),
     GetPage(
-  name: Routes.TASK,
-  page: () => const TasksView(),
-  binding: TasksBinding(),
-),
-
+      name: Routes.TASK,
+      page: () => const TasksView(),
+      binding: TasksBinding(),
+    ),
+    GetPage(
+      name: Routes.HEALTH,
+      page: () => const HealthView(),
+      binding: HealthBinding(),
+    ),
   ];
 }
