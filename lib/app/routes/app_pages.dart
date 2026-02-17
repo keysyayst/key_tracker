@@ -18,6 +18,8 @@ import '../modules/tasks/bindings/tasks_binding.dart';
 import '../modules/tasks/views/tasks_view.dart';
 import '../modules/wallet/bindings/wallet_binding.dart';
 import '../modules/wallet/views/wallet_view.dart';
+import '../modules/wishlist/bindings/wishlist_binding.dart';
+import '../modules/wishlist/views/wishlist_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -73,6 +75,11 @@ class AppPages {
       name: Routes.HEALTH,
       page: () => const HealthView(),
       binding: HealthBinding(),
+    ),
+    GetPage(
+      name: Routes.WISHLIST,
+      page: () => const WishlistView(),
+      binding: WishlistBinding(),
     ),
   ];
 }

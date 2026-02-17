@@ -8,4 +8,5 @@ abstract class Routes {
   static const COOK = '/cook';
   static const TASK = '/task';
   static const HEALTH = '/health';
+  static const WISHLIST = '/wishlist';
 }

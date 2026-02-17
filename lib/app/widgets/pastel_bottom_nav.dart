@@ -37,17 +37,36 @@ class PastelBottomNav extends StatelessWidget {
         borderRadius: BorderRadius.circular(34),
         border: Border.all(color: AppColors.white),
         boxShadow: const [
-          BoxShadow(color: Color(0x1A000000), blurRadius: 16, offset: Offset(0, 10)),
+          BoxShadow(
+            color: Color(0x1A000000),
+            blurRadius: 16,
+            offset: Offset(0, 10),
+          ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           item(i: 0, icon: Icons.home_rounded, activeColor: AppColors.pink500),
-          item(i: 1, icon: Icons.pie_chart_rounded, activeColor: AppColors.purple400),
+          item(
+            i: 1,
+            icon: Icons.pie_chart_rounded,
+            activeColor: AppColors.purple400,
+          ),
           const SizedBox(width: 44), // spacer untuk FAB tengah
-          item(i: 2, icon: Icons.menu_book_rounded, activeColor: AppColors.blue400),
-          item(i: 3, icon: Icons.person_rounded, activeColor: AppColors.orange400),
+
+          // DIUBAH: icon tab index 2 jadi bookmark (Wishlist)
+          item(
+            i: 2,
+            icon: Icons.bookmark_border_rounded,
+            activeColor: AppColors.pink500,
+          ),
+
+          item(
+            i: 3,
+            icon: Icons.person_rounded,
+            activeColor: AppColors.orange400,
+          ),
         ],
       ),
     );

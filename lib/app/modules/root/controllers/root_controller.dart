@@ -28,8 +28,12 @@ class RootController extends GetxController {
       FabActionSheet(
         onAddHabit: () =>
             Get.snackbar('Habit', 'Buka form tambah habit (next step)'),
-        onAddJournal: () =>
-            Get.snackbar('Journal', 'Buka form journal (next step)'),
+
+        onAddWishlist: () {
+          Get.back();
+          Get.toNamed(Routes.WISHLIST);
+          },
+            
 
         onWallet: () {
           Get.back();

@@ -4,19 +4,20 @@ import '../themes/app_colors.dart';
 
 class FabActionSheet extends StatelessWidget {
   final VoidCallback onAddHabit;
-  final VoidCallback onAddJournal;
+
+  // Wishlist (rename dari Journal)
+  final VoidCallback onAddWishlist;
+
   final VoidCallback onWallet;
   final VoidCallback onHealth;
 
-  // DIUBAH: dari onStartFocus -> onAddTask
   final VoidCallback onAddTask;
-
   final VoidCallback onAddCook;
 
   const FabActionSheet({
     super.key,
     required this.onAddHabit,
-    required this.onAddJournal,
+    required this.onAddWishlist,
     required this.onWallet,
     required this.onHealth,
     required this.onAddTask,
@@ -48,7 +49,6 @@ class FabActionSheet extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // DIUBAH: header "Tambah cepat" dihapus, sisakan tombol close saja
               Align(
                 alignment: Alignment.centerRight,
                 child: IconButton(
@@ -58,7 +58,6 @@ class FabActionSheet extends StatelessWidget {
               ),
               const SizedBox(height: 6),
 
-              // Grid Actions
               GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
@@ -79,19 +78,19 @@ class FabActionSheet extends StatelessWidget {
                     },
                   ),
 
-                  // 2. Journal
+                  // 2. Wallet (DITUKAR: Wallet naik ke sini)
                   _ActionTile(
-                    icon: Icons.edit_note_rounded,
-                    title: 'Journal',
-                    bg: const Color(0xFFFCE7F3),
-                    fg: AppColors.pink500,
+                    icon: Icons.account_balance_wallet_rounded,
+                    title: 'Wallet',
+                    bg: const Color(0xFFD1FAE5),
+                    fg: AppColors.emerald500,
                     onTap: () {
                       Get.back();
-                      onAddJournal();
+                      onWallet();
                     },
                   ),
 
-                  // 3. Task (DIUBAH dari Focus)
+                  // 3. Task
                   _ActionTile(
                     icon: Icons.task_alt_rounded,
                     title: 'Task',
@@ -103,15 +102,15 @@ class FabActionSheet extends StatelessWidget {
                     },
                   ),
 
-                  // 4. Wallet
+                  // 4. Wishlist (DITUKAR: Wishlist turun ke sini)
                   _ActionTile(
-                    icon: Icons.account_balance_wallet_rounded,
-                    title: 'Wallet',
-                    bg: const Color(0xFFD1FAE5),
-                    fg: AppColors.emerald500,
+                    icon: Icons.bookmark_outline_rounded,
+                    title: 'Wishlist',
+                    bg: const Color(0xFFFCE7F3),
+                    fg: AppColors.pink500,
                     onTap: () {
                       Get.back();
-                      onWallet();
+                      onAddWishlist();
                     },
                   ),
 
@@ -140,8 +139,6 @@ class FabActionSheet extends StatelessWidget {
                   ),
                 ],
               ),
-
-              // DIUBAH: tip container dihapus
             ],
           ),
         ),
