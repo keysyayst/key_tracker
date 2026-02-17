@@ -34,7 +34,8 @@ class HealthView extends GetView<HealthController> {
             const SizedBox(height: 14),
             _WorkoutSection(
               onAddForDay: (day) => _openAddWorkout(context, day),
-              onLongPressWorkout: (item) => _openWorkoutActions(context, item),
+              onOpenWorkoutActions: (item) =>
+                  _openWorkoutActions(context, item),
             ),
           ],
         ),
@@ -200,81 +201,85 @@ class HealthView extends GetView<HealthController> {
       builder: (_) {
         return _CuteSheet(
           title: 'BB actions',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _CuteMiniTile(
-                icon: Icons.edit_outlined,
-                text: 'Edit',
-                onTap: () async {
-                  Navigator.pop(context);
-                  await showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) {
-                      return _CuteSheet(
-                        title: 'Edit BB',
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _CuteField(
-                                controller: weightC,
-                                label: 'Berat badan (kg)',
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _CuteActionTile(
+                  icon: Icons.edit_outlined,
+                  text: 'Edit',
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) {
+                        return _CuteSheet(
+                          title: 'Edit BB',
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _CuteField(
+                                  controller: weightC,
+                                  label: 'Berat badan (kg)',
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 10),
-                              _CuteField(
-                                controller: noteC,
-                                label: 'Catatan (opsional)',
-                              ),
-                              const SizedBox(height: 10),
-                              _CuteDateRow(
-                                initial: picked,
-                                onPick: (d) => picked = d,
-                              ),
-                              const SizedBox(height: 12),
-                              _CutePrimaryButton(
-                                text: 'Simpan perubahan',
-                                onTap: () async {
-                                  final w =
-                                      double.tryParse(weightC.text.trim());
-                                  if (w == null) return;
-                                  await controller.updateWeight(
-                                    id: id,
-                                    weightKg: w,
-                                    recordedAt: picked,
-                                    note: noteC.text.trim().isEmpty
-                                        ? null
-                                        : noteC.text.trim(),
-                                  );
-                                  if (context.mounted) Navigator.pop(context);
-                                },
-                              ),
-                            ],
+                                const SizedBox(height: 10),
+                                _CuteField(
+                                  controller: noteC,
+                                  label: 'Catatan (opsional)',
+                                ),
+                                const SizedBox(height: 10),
+                                _CuteDateRow(
+                                  initial: picked,
+                                  onPick: (d) => picked = d,
+                                ),
+                                const SizedBox(height: 12),
+                                _CutePrimaryButton(
+                                  text: 'Simpan perubahan',
+                                  onTap: () async {
+                                    final w =
+                                        double.tryParse(weightC.text.trim());
+                                    if (w == null) return;
+                                    await controller.updateWeight(
+                                      id: id,
+                                      weightKg: w,
+                                      recordedAt: picked,
+                                      note: noteC.text.trim().isEmpty
+                                          ? null
+                                          : noteC.text.trim(),
+                                    );
+                                    if (context.mounted) Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              _CuteMiniTile(
-                icon: Icons.delete_outline,
-                text: 'Hapus',
-                onTap: () async {
-                  Navigator.pop(context);
-                  await controller.deleteWeight(id);
-                },
-              ),
-            ],
+                        );
+                      },
+                    );
+                  },
+                ),
+                _CuteActionTile(
+                  icon: Icons.delete_outline,
+                  text: 'Hapus',
+                  danger: true,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await controller.deleteWeight(id);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -356,66 +361,70 @@ class HealthView extends GetView<HealthController> {
       builder: (_) {
         return _CuteSheet(
           title: 'Workout actions',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _CuteMiniTile(
-                icon: Icons.edit_outlined,
-                text: 'Edit',
-                onTap: () async {
-                  Navigator.pop(context);
-                  await showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) {
-                      return _CuteSheet(
-                        title: 'Edit workout',
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom,
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _CuteActionTile(
+                  icon: Icons.edit_outlined,
+                  text: 'Edit',
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) {
+                        return _CuteSheet(
+                          title: 'Edit workout',
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _CuteField(controller: titleC, label: 'Judul'),
+                                const SizedBox(height: 10),
+                                _CuteField(
+                                  controller: descC,
+                                  label: 'Deskripsi (opsional)',
+                                ),
+                                const SizedBox(height: 12),
+                                _CutePrimaryButton(
+                                  text: 'Simpan perubahan',
+                                  onTap: () async {
+                                    if (titleC.text.trim().isEmpty) return;
+                                    await controller.updateWorkout(
+                                      id: id,
+                                      title: titleC.text.trim(),
+                                      description: descC.text.trim().isEmpty
+                                          ? null
+                                          : descC.text.trim(),
+                                    );
+                                    if (context.mounted) Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _CuteField(controller: titleC, label: 'Judul'),
-                              const SizedBox(height: 10),
-                              _CuteField(
-                                controller: descC,
-                                label: 'Deskripsi (opsional)',
-                              ),
-                              const SizedBox(height: 12),
-                              _CutePrimaryButton(
-                                text: 'Simpan perubahan',
-                                onTap: () async {
-                                  if (titleC.text.trim().isEmpty) return;
-                                  await controller.updateWorkout(
-                                    id: id,
-                                    title: titleC.text.trim(),
-                                    description: descC.text.trim().isEmpty
-                                        ? null
-                                        : descC.text.trim(),
-                                  );
-                                  if (context.mounted) Navigator.pop(context);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              _CuteMiniTile(
-                icon: Icons.delete_outline,
-                text: 'Hapus',
-                onTap: () async {
-                  Navigator.pop(context);
-                  await controller.deleteWorkout(id);
-                },
-              ),
-            ],
+                        );
+                      },
+                    );
+                  },
+                ),
+                _CuteActionTile(
+                  icon: Icons.delete_outline,
+                  text: 'Hapus',
+                  danger: true,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await controller.deleteWorkout(id);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -515,11 +524,13 @@ class _WeightCard extends GetView<HealthController> {
 class _WorkoutSection extends GetView<HealthController> {
   const _WorkoutSection({
     required this.onAddForDay,
-    required this.onLongPressWorkout,
+    required this.onOpenWorkoutActions,
   });
 
   final void Function(int day) onAddForDay;
-  final void Function(Map<String, dynamic> item) onLongPressWorkout;
+
+  /// Dibuka dari tombol "..." supaya pasti bisa dipencet.
+  final void Function(Map<String, dynamic> item) onOpenWorkoutActions;
 
   static const _mint = Color(0xFFCFF5E7);
   static const _lav = Color(0xFFE9E2FF);
@@ -625,50 +636,54 @@ class _WorkoutSection extends GetView<HealthController> {
                                 : '$time-${end.substring(0, 5)}';
                           }
 
-                          return GestureDetector(
-                            onLongPress: () => onLongPressWorkout(it),
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(.65),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.black12),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.fitness_center, size: 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
+                          return Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(.65),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.black12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.fitness_center, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      if (time.isNotEmpty)
                                         Text(
-                                          title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                          time,
                                           style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12,
+                                            color: Colors.black54,
                                           ),
                                         ),
-                                        if (time.isNotEmpty)
-                                          Text(
-                                            time,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.black54,
-                                            ),
-                                          ),
-                                      ],
+                                    ],
+                                  ),
+                                ),
+                                InkResponse(
+                                  onTap: () => onOpenWorkoutActions(it),
+                                  radius: 18,
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(
+                                      Icons.more_horiz,
+                                      size: 18,
+                                      color: Colors.black45,
                                     ),
                                   ),
-                                  const Icon(
-                                    Icons.more_horiz,
-                                    size: 18,
-                                    color: Colors.black45,
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           );
                         },
@@ -679,11 +694,6 @@ class _WorkoutSection extends GetView<HealthController> {
               ),
             );
           },
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Tip: long-press item untuk edit/hapus (biar tombolnya tidak rame).',
-          style: TextStyle(color: _ink.withOpacity(.55), fontSize: 12),
         ),
       ],
     );
@@ -744,7 +754,7 @@ class _CatLottieButtonState extends State<_CatLottieButton>
             child: Transform.scale(
               scale: widget.scale,
               child: ColorFiltered(
-                colorFilter: ColorFilter.mode(
+                colorFilter: const ColorFilter.mode(
                   pink,
                   BlendMode.modulate,
                 ),
@@ -881,39 +891,44 @@ class _CutePrimaryButton extends StatelessWidget {
   }
 }
 
-class _CuteMiniTile extends StatelessWidget {
-  const _CuteMiniTile({
+class _CuteActionTile extends StatelessWidget {
+  const _CuteActionTile({
     required this.icon,
     required this.text,
     required this.onTap,
+    this.danger = false,
   });
 
   final IconData icon;
   final String text;
   final VoidCallback onTap;
+  final bool danger;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final fg = danger ? const Color(0xFFD13B57) : const Color(0xFF2D2A32);
+    final bg = danger ? const Color(0xFFFFEEF3) : const Color(0xFFF6F1FF);
+
+    return ListTile(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        margin: const EdgeInsets.only(bottom: 8),
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Container(
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F1FF),
+          color: bg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.black12),
         ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18),
-            const SizedBox(width: 10),
-            Text(text, style: const TextStyle(fontWeight: FontWeight.w800)),
-          ],
-        ),
+        child: Icon(icon, size: 18, color: fg),
       ),
+      title: Text(
+        text,
+        style: TextStyle(fontWeight: FontWeight.w800, color: fg),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: Colors.black38),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
 }
