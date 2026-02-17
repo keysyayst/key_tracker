@@ -25,7 +25,7 @@ class WalletModel {
       name: json['name'],
       balance: (json['balance'] as num).toDouble(),
       iconCode: json['icon_code'] ?? 58946,
-      colorValue: json['color_value'] ?? 0xFFFB7185, // Default Pink
+      colorValue: json['color_value'] ?? 0xFFFB7185,
     );
   }
 }
@@ -99,20 +99,23 @@ class WalletController extends GetxController {
   var weeklyBudgetLimit = 0.0.obs;
   var weeklySpent = 0.0.obs;
 
-  // ====== Dana Darurat (TAMBAHAN) ======
+  // Dana Darurat
   final emergencyFundAmount = 0.0.obs;
-  // ====================================
 
-  // State untuk Tab (0 = Wallet, 1 = Grafik)
+  // Tab (0=Wallet, 1=Analisis)
   var currentTab = 0.obs;
 
-  // State Filter Grafik (0 = Mingguan, 1 = Bulanan)
+  // Filter Analisis (0=Mingguan, 1=Bulanan)
   var chartFilter = 0.obs;
+
+  /// IMPORTANT: Anchor terpisah
+  final weeklyAnchorDate = DateTime.now().obs;
+  final monthlyAnchorDate = DateTime.now().obs;
 
   var isLoading = true.obs;
   var isSubmitting = false.obs;
 
-  // ====== TAMBAHAN UNTUK SINKRON ROOT <-> DASHBOARD (REAL TIME) ======
+  // Sync root/dashboard
   final RxnString activeWalletId = RxnString();
 
   WalletModel? get activeWallet {
@@ -128,7 +131,6 @@ class WalletController extends GetxController {
   void setActiveWallet(String walletId) {
     activeWalletId.value = walletId;
   }
-  // ==================================================================
 
   double get totalBalance => wallets.fold(0, (sum, item) => sum + item.balance);
 
@@ -146,7 +148,6 @@ class WalletController extends GetxController {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return;
 
-      // Wallets
       final walletData = await _supabase
           .from('wallets')
           .select()
@@ -154,37 +155,29 @@ class WalletController extends GetxController {
           .order('created_at');
       wallets.value = (walletData as List).map((e) => WalletModel.fromJson(e)).toList();
 
-      // Pastikan activeWalletId valid setelah wallets ke-load
       if (wallets.isEmpty) {
         activeWalletId.value = null;
       } else {
         final currentId = activeWalletId.value;
         final stillExists = currentId != null && wallets.any((w) => w.id == currentId);
-        if (!stillExists) {
-          activeWalletId.value = wallets.first.id;
-        }
+        if (!stillExists) activeWalletId.value = wallets.first.id;
       }
 
-      // Transactions
       final transactionData = await _supabase
           .from('transactions')
           .select()
           .eq('user_id', userId)
           .order('date', ascending: false);
-      transactions.value = (transactionData as List).map((e) => TransactionModel.fromJson(e)).toList();
+      transactions.value =
+          (transactionData as List).map((e) => TransactionModel.fromJson(e)).toList();
 
-      // Budget
       final budgetData =
           await _supabase.from('budgets').select().eq('user_id', userId).maybeSingle();
-      if (budgetData != null) {
-        weeklyBudgetLimit.value = (budgetData['weekly_limit'] as num).toDouble();
-      } else {
-        weeklyBudgetLimit.value = 0.0;
-      }
+      weeklyBudgetLimit.value =
+          budgetData == null ? 0.0 : (budgetData['weekly_limit'] as num).toDouble();
 
       calculateWeeklySpent();
 
-      // Wishlist (Saving Targets)
       final savingData = await _supabase
           .from('saving_targets')
           .select()
@@ -193,15 +186,13 @@ class WalletController extends GetxController {
       savingTargets.value =
           (savingData as List).map((e) => SavingTargetModel.fromJson(e)).toList();
 
-      // Dana Darurat (tidak boleh bikin wallet rusak kalau tabel belum ada)
       try {
         final ef = await _supabase
             .from('emergency_fund')
             .select()
             .eq('user_id', userId)
             .maybeSingle();
-        emergencyFundAmount.value =
-            ef == null ? 0.0 : (ef['amount'] as num).toDouble();
+        emergencyFundAmount.value = ef == null ? 0.0 : (ef['amount'] as num).toDouble();
       } catch (_) {
         emergencyFundAmount.value = 0.0;
       }
@@ -215,21 +206,111 @@ class WalletController extends GetxController {
 
   void calculateWeeklySpent() {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeek =
+        DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
     final startOfNextWeek = startOfWeek.add(const Duration(days: 7));
 
     double spent = 0;
     for (var trx in transactions) {
-      if (trx.isExpense &&
-          trx.date.isAfter(startOfWeek) &&
-          trx.date.isBefore(startOfNextWeek)) {
-        spent += trx.amount;
-      }
+      final inRange =
+          (trx.date.isAtSameMomentAs(startOfWeek) || trx.date.isAfter(startOfWeek)) &&
+              trx.date.isBefore(startOfNextWeek);
+      if (trx.isExpense && inRange) spent += trx.amount;
     }
     weeklySpent.value = spent;
   }
 
-  // ====== ACTIONS: DANA DARURAT (TAMBAHAN) ======
+  // ====== ANALISIS: helper anchor ======
+  DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime get currentAnchorDate {
+    return chartFilter.value == 0 ? weeklyAnchorDate.value : monthlyAnchorDate.value;
+  }
+
+  void setChartFilter(int value) {
+    chartFilter.value = value;
+    // Jangan mengubah anchor lain.
+  }
+
+  void setWeeklyAnchorDate(DateTime d) {
+    weeklyAnchorDate.value = _startOfDay(d);
+  }
+
+  void setMonthlyAnchorDate(DateTime d) {
+    monthlyAnchorDate.value = _startOfDay(d);
+  }
+
+  void setCurrentAnchorDate(DateTime d) {
+    if (chartFilter.value == 0) {
+      setWeeklyAnchorDate(d);
+    } else {
+      setMonthlyAnchorDate(d);
+    }
+  }
+
+  DateTimeRange get analysisRange {
+    final anchor = _startOfDay(currentAnchorDate);
+
+    if (chartFilter.value == 0) {
+      final start = anchor.subtract(Duration(days: anchor.weekday - 1));
+      final end = start.add(const Duration(days: 7)); // exclusive
+      return DateTimeRange(start: start, end: end);
+    } else {
+      final start = DateTime(anchor.year, anchor.month, 1);
+      final end = (anchor.month == 12)
+          ? DateTime(anchor.year + 1, 1, 1)
+          : DateTime(anchor.year, anchor.month + 1, 1);
+      return DateTimeRange(start: start, end: end);
+    }
+  }
+
+  String get analysisRangeLabel {
+    final r = analysisRange;
+    final fmt = DateFormat('d MMM yyyy', 'id_ID');
+    final endInclusive = r.end.subtract(const Duration(days: 1));
+    return '${fmt.format(r.start)} - ${fmt.format(endInclusive)}';
+  }
+
+  String get currentAnchorLabel {
+    final fmt = DateFormat('d MMM yyyy', 'id_ID');
+    return fmt.format(currentAnchorDate);
+  }
+
+  // --- PIE DATA ---
+  List<PieChartData> getPieData({required bool isExpense}) {
+    final Map<String, double> groupedData = {};
+    final range = analysisRange;
+
+    for (final trx in transactions) {
+      final inRange = (trx.date.isAtSameMomentAs(range.start) || trx.date.isAfter(range.start)) &&
+          trx.date.isBefore(range.end);
+
+      if (trx.isExpense == isExpense && inRange) {
+        groupedData[trx.title] = (groupedData[trx.title] ?? 0) + trx.amount;
+      }
+    }
+
+    final List<Color> colors = [
+      const Color(0xFFFB7185),
+      const Color(0xFFF472B6),
+      const Color(0xFFFB923C),
+      const Color(0xFF34D399),
+      const Color(0xFF60A5FA),
+      const Color(0xFFA78BFA),
+    ];
+
+    int colorIndex = 0;
+    final List<PieChartData> result = [];
+    groupedData.forEach((key, value) {
+      result.add(PieChartData(key, value, colors[colorIndex % colors.length]));
+      colorIndex++;
+    });
+
+    result.sort((a, b) => b.value.compareTo(a.value));
+    return result;
+  }
+
+  // ====== Dana Darurat ======
   Future<void> addEmergencyFund(double amount) async {
     if (amount <= 0) {
       Get.snackbar("Oops", "Nominal harus lebih dari 0",
@@ -242,12 +323,7 @@ class WalletController extends GetxController {
       final userId = _supabase.auth.currentUser!.id;
       final newAmount = emergencyFundAmount.value + amount;
 
-      await _supabase.from('emergency_fund').upsert({
-        'user_id': userId,
-        'amount': newAmount,
-      });
-
-      // real-time dalam app (dashboard & wallet ikut update)
+      await _supabase.from('emergency_fund').upsert({'user_id': userId, 'amount': newAmount});
       emergencyFundAmount.value = newAmount;
 
       Get.snackbar("Siap", "Dana darurat bertambah",
@@ -277,11 +353,7 @@ class WalletController extends GetxController {
       final userId = _supabase.auth.currentUser!.id;
       final newAmount = emergencyFundAmount.value - amount;
 
-      await _supabase.from('emergency_fund').upsert({
-        'user_id': userId,
-        'amount': newAmount,
-      });
-
+      await _supabase.from('emergency_fund').upsert({'user_id': userId, 'amount': newAmount});
       emergencyFundAmount.value = newAmount;
 
       Get.snackbar("Oke", "Dana darurat berkurang",
@@ -293,9 +365,8 @@ class WalletController extends GetxController {
       isSubmitting.value = false;
     }
   }
-  // ==============================================
 
-  // --- ACTIONS ---
+  // --- ACTIONS WALLET/SAVING/TRANSAKSI (tetap sama) ---
   Future<void> addWallet(String name, double balance) async {
     if (isSubmitting.value) return;
     isSubmitting.value = true;
@@ -305,7 +376,7 @@ class WalletController extends GetxController {
         'name': name,
         'balance': balance,
         'icon_code': Icons.account_balance_wallet_rounded.codePoint,
-        'color_value': 0xFFFB7185, // Pink
+        'color_value': 0xFFFB7185,
       });
       await fetchData();
       Get.snackbar("Berhasil", "Dompet ditambahkan",
@@ -343,8 +414,7 @@ class WalletController extends GetxController {
     }
   }
 
-  Future<void> addTransaction(
-      String title, double amount, bool isExpense, String walletId) async {
+  Future<void> addTransaction(String title, double amount, bool isExpense, String walletId) async {
     if (isSubmitting.value) return;
     isSubmitting.value = true;
     try {
@@ -361,15 +431,13 @@ class WalletController extends GetxController {
       final walletIndex = wallets.indexWhere((w) => w.id == walletId);
       if (walletIndex != -1) {
         final oldWallet = wallets[walletIndex];
-        final newBalance =
-            isExpense ? oldWallet.balance - amount : oldWallet.balance + amount;
-        await _supabase
-            .from('wallets')
-            .update({'balance': newBalance})
-            .eq('id', walletId);
+        final newBalance = isExpense ? oldWallet.balance - amount : oldWallet.balance + amount;
+        await _supabase.from('wallets').update({'balance': newBalance}).eq('id', walletId);
       }
+
       if (isExpense) weeklySpent.value += amount;
       await fetchData();
+
       Get.snackbar("Sukses", "Transaksi dicatat",
           backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
@@ -386,20 +454,11 @@ class WalletController extends GetxController {
     try {
       final userId = _supabase.auth.currentUser!.id;
 
-      final existing = await _supabase
-          .from('budgets')
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
+      final existing = await _supabase.from('budgets').select().eq('user_id', userId).maybeSingle();
       if (existing != null) {
-        await _supabase
-            .from('budgets')
-            .update({'weekly_limit': amount})
-            .eq('user_id', userId);
+        await _supabase.from('budgets').update({'weekly_limit': amount}).eq('user_id', userId);
       } else {
-        await _supabase
-            .from('budgets')
-            .insert({'user_id': userId, 'weekly_limit': amount});
+        await _supabase.from('budgets').insert({'user_id': userId, 'weekly_limit': amount});
       }
 
       await _supabase.from('transactions').insert({
@@ -412,10 +471,7 @@ class WalletController extends GetxController {
       });
 
       final wallet = wallets.firstWhere((w) => w.id == sourceWalletId);
-      await _supabase
-          .from('wallets')
-          .update({'balance': wallet.balance - amount})
-          .eq('id', sourceWalletId);
+      await _supabase.from('wallets').update({'balance': wallet.balance - amount}).eq('id', sourceWalletId);
 
       weeklyBudgetLimit.value = amount;
       await fetchData();
@@ -429,7 +485,6 @@ class WalletController extends GetxController {
     }
   }
 
-  // --- ACTIONS: SAVING TARGETS ---
   Future<void> addSavingTarget(String title, double target) async {
     try {
       await _supabase.from('saving_targets').insert({
@@ -452,10 +507,7 @@ class WalletController extends GetxController {
       final target = savingTargets.firstWhere((t) => t.id == id);
       final newAmount = target.currentAmount + amountToAdd;
 
-      await _supabase
-          .from('saving_targets')
-          .update({'current_amount': newAmount})
-          .eq('id', id);
+      await _supabase.from('saving_targets').update({'current_amount': newAmount}).eq('id', id);
       await fetchData();
       Get.snackbar("Yay!", "Wishlist bertambah Rp ${amountToAdd.toInt()}",
           backgroundColor: Colors.green, colorText: Colors.white);
@@ -467,10 +519,7 @@ class WalletController extends GetxController {
 
   Future<void> editSavingTarget(String id, String newTitle, double newTarget) async {
     try {
-      await _supabase.from('saving_targets').update({
-        'title': newTitle,
-        'target_amount': newTarget
-      }).eq('id', id);
+      await _supabase.from('saving_targets').update({'title': newTitle, 'target_amount': newTarget}).eq('id', id);
       await fetchData();
       Get.snackbar("Update", "Info wishlist diubah",
           backgroundColor: Colors.green, colorText: Colors.white);
@@ -490,44 +539,5 @@ class WalletController extends GetxController {
       Get.snackbar("Error", "Gagal hapus wishlist",
           backgroundColor: Colors.red, colorText: Colors.white);
     }
-  }
-
-  // --- PIE CHART DATA GENERATION ---
-  List<PieChartData> getPieData({required bool isExpense}) {
-    Map<String, double> groupedData = {};
-
-    final now = DateTime.now();
-    final startDate = chartFilter.value == 0
-        ? now.subtract(const Duration(days: 7))
-        : DateTime(now.year, now.month - 1, now.day);
-
-    for (var trx in transactions) {
-      if (trx.isExpense == isExpense && trx.date.isAfter(startDate)) {
-        if (groupedData.containsKey(trx.title)) {
-          groupedData[trx.title] = groupedData[trx.title]! + trx.amount;
-        } else {
-          groupedData[trx.title] = trx.amount;
-        }
-      }
-    }
-
-    List<Color> colors = [
-      const Color(0xFFFB7185),
-      const Color(0xFFF472B6),
-      const Color(0xFFFB923C),
-      const Color(0xFF34D399),
-      const Color(0xFF60A5FA),
-      const Color(0xFFA78BFA),
-    ];
-
-    int colorIndex = 0;
-    List<PieChartData> result = [];
-    groupedData.forEach((key, value) {
-      result.add(PieChartData(key, value, colors[colorIndex % colors.length]));
-      colorIndex++;
-    });
-
-    result.sort((a, b) => b.value.compareTo(a.value));
-    return result;
   }
 }

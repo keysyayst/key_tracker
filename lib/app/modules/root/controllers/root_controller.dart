@@ -26,8 +26,7 @@ class RootController extends GetxController {
   void onFab() {
     Get.bottomSheet(
       FabActionSheet(
-        onAddHabit: () =>
-            Get.snackbar('Habit', 'Buka form tambah habit (next step)'),
+        onAddHabit: () => Get.toNamed(Routes.HABIT),
 
         onAddWishlist: () {
           Get.back();

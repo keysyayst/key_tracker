@@ -67,11 +67,11 @@ class WalletView extends GetView<WalletController> {
                 border: Border.all(color: CuteSurface.border),
               ),
               child: Obx(() => Row(
-                children: [
-                  _buildTabButton("Dompet", 0, CutePalette.pink),
-                  _buildTabButton("Analisis", 1, CutePalette.salmon),
-                ],
-              )),
+                    children: [
+                      _buildTabButton("Dompet", 0, CutePalette.pink),
+                      _buildTabButton("Analisis", 1, CutePalette.salmon),
+                    ],
+                  )),
             ),
           ),
           Expanded(
@@ -272,6 +272,7 @@ class WalletView extends GetView<WalletController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Switch Mingguan/Bulanan
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -284,7 +285,74 @@ class WalletView extends GetView<WalletController> {
               _buildChartFilterBtn("Bulanan", 1),
             ]),
           ),
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 12),
+
+          // ====== BARU: KLIK TANGGAL (TERPISAH UNTUK MINGGUAN & BULANAN) ======
+          Obx(() {
+            final isWeekly = controller.chartFilter.value == 0;
+            final anchor = isWeekly ? controller.weeklyAnchorDate.value : controller.monthlyAnchorDate.value;
+            final fmt = DateFormat('d MMM yyyy', 'id_ID');
+
+            return InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: anchor,
+                  firstDate: DateTime(2000, 1, 1),
+                  lastDate: DateTime(2100, 12, 31),
+                  helpText: isWeekly ? 'Pilih tanggal untuk Mingguan' : 'Pilih tanggal untuk Bulanan',
+                  cancelText: 'Batal',
+                  confirmText: 'Pilih',
+                );
+
+                if (picked != null) {
+                  if (isWeekly) {
+                    controller.setWeeklyAnchorDate(picked);
+                  } else {
+                    controller.setMonthlyAnchorDate(picked);
+                  }
+                }
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: CuteSurface.border),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month_rounded, color: CutePalette.dark),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isWeekly ? 'Tanggal Mingguan: ${fmt.format(anchor)}' : 'Tanggal Bulanan: ${fmt.format(anchor)}',
+                            style: const TextStyle(fontWeight: FontWeight.w900, color: CutePalette.dark),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            controller.analysisRangeLabel,
+                            style: const TextStyle(fontSize: 12, color: CutePalette.muted, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, color: CutePalette.muted),
+                  ],
+                ),
+              ),
+            );
+          }),
+          // ====================================================================
+
+          const SizedBox(height: 20),
+
           const Text("Analisis Pengeluaran",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: CutePalette.dark)),
           const SizedBox(height: 12),
@@ -313,7 +381,7 @@ class WalletView extends GetView<WalletController> {
       child: Obx(() {
         final isActive = controller.chartFilter.value == value;
         return GestureDetector(
-          onTap: () => controller.chartFilter.value = value,
+          onTap: () => controller.setChartFilter(value),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
@@ -729,7 +797,6 @@ class EmergencyFundCard extends StatelessWidget {
 }
 
 // --- WIDGET COMPONENTS (PIE CHART & OTHERS) ---
-// (Bagian bawah file kamu tetap sama, aku biarkan tidak diubah)
 class _PieChartCard extends StatelessWidget {
   final String title;
   final List<PieChartData> data;
@@ -831,7 +898,9 @@ class SavingsTargetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double percent = (target.targetAmount > 0) ? (target.currentAmount / target.targetAmount).clamp(0.0, 1.0) : 0.0;
+    final double percent = (target.targetAmount > 0)
+        ? (target.currentAmount / target.targetAmount).clamp(0.0, 1.0)
+        : 0.0;
 
     return GestureDetector(
       onTap: () => (context.findAncestorWidgetOfExactType<WalletView>() as WalletView)._showEditSavingDialog(context, target),

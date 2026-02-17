@@ -8,6 +8,10 @@ import '../modules/cook/bindings/cook_binding.dart';
 import '../modules/cook/views/cook_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
+import '../modules/habit/bindings/habit_binding.dart';
+import '../modules/habit/bindings/habit_binding.dart';
+import '../modules/habit/views/habit_view.dart';
+import '../modules/habit/views/habit_view.dart';
 import '../modules/health/bindings/health_binding.dart';
 import '../modules/health/views/health_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
@@ -57,11 +61,6 @@ class AppPages {
       binding: WalletBinding(),
     ),
     GetPage(
-      name: Routes.dashboard,
-      page: () => const DashboardView(),
-      binding: DashboardBinding(),
-    ),
-    GetPage(
       name: Routes.COOK,
       page: () => const CookView(),
       binding: CookBinding(),
@@ -80,6 +79,16 @@ class AppPages {
       name: Routes.WISHLIST,
       page: () => const WishlistView(),
       binding: WishlistBinding(),
+    ),
+    GetPage(
+      name: Routes.HABIT,
+      page: () => const HabitView(),
+      binding: HabitBinding(),
+    ),
+    GetPage(
+      name: Routes.HABIT,
+      page: () => const HabitView(),
+      binding: HabitBinding(),
     ),
   ];
 }
