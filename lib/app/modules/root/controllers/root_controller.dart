@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-
+import '../../../routes/app_routes.dart';
 import '../../../widgets/fab_action_sheet.dart';
 import '../../wallet/views/wallet_view.dart';
 import '../../wallet/controllers/wallet_controller.dart';
@@ -39,9 +39,10 @@ class RootController extends GetxController {
 
         onHealth: () => Get.snackbar('Health', 'Buka tracker kesehatan (next step)'),
 
-        // DIUBAH: Focus -> Task
-        onAddTask: () => Get.snackbar('Task', 'Buka form task (next step)'),
-
+        onAddTask: () {
+  Get.back();
+  Get.toNamed(Routes.TASK);
+},
         onAddCook: () => Get.snackbar('Cook', 'Buka form resep masakan (next step)'),
         // contoh kalau sudah pakai CookView:
         // onAddCook: () { Get.back(); Get.to(() => const CookView()); },

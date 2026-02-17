@@ -63,9 +63,10 @@ class AppPages {
       binding: CookBinding(),
     ),
     GetPage(
-      name: Routes.TASKS,
-      page: () => const TasksView(),
-      binding: TasksBinding(),
-    ),
+  name: Routes.TASK,
+  page: () => const TasksView(),
+  binding: TasksBinding(),
+),
+
   ];
 }
